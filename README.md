@@ -23,9 +23,21 @@ my-streamlit-app
 └── README.md                 # Project documentation
 ```
 
+
+## Usage
+
+To access the app follow [link](https://tudung2uva-my-streamlit-app-srcapp-nsssji.streamlit.app/)
+
+To start the Streamlit application locally, run the following command in your terminal:
+```
+streamlit run src/app.py
+```
+
+Once the application is running, you can navigate through the different pages using the sidebar.
+
 ## Installation
 
-To run this application, you need to have Python installed on your machine. Follow these steps to set up the project:
+To run this application locally, you need to have Python installed on your machine. Follow these steps to set up the project:
 
 1. Clone the repository:
    ```
@@ -38,14 +50,6 @@ To run this application, you need to have Python installed on your machine. Foll
    pip install -r requirements.txt
    ```
 
-## Usage
-
-To start the Streamlit application, run the following command in your terminal:
-```
-streamlit run src/app.py
-```
-
-Once the application is running, you can navigate through the different pages using the sidebar.
 
 ## Contributing
 
