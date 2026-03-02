@@ -41,15 +41,15 @@ COL_DAYS_TO_CLOSE = "_Days to Close"
 # ---------------------------------------------------------------------------
 REQUIRED_COLUMNS = [
     COL_DEAL_ID,
+]
+
+OPTIONAL_COLUMNS = [
     COL_CREATION_DATE,
     COL_ARR,
     COL_DEAL_STAGE,
     COL_CLOSE_DATE,
     COL_DEAL_OWNER,
     COL_DEAL_TYPE,
-]
-
-OPTIONAL_COLUMNS = [
     COL_PRODUCT_TIER,
     COL_PIPELINE,
     COL_INDUSTRY,
@@ -62,6 +62,22 @@ OPTIONAL_COLUMNS = [
     COL_CUSTOMER_OWNER,
     COL_CHANNEL,
 ]
+
+# ---------------------------------------------------------------------------
+# Metric → required columns (for graceful degradation)
+# ---------------------------------------------------------------------------
+METRIC_REQUIREMENTS: dict[str, list[str]] = {
+    "Win Rate": [COL_DEAL_STAGE, COL_CREATION_DATE],
+    "Revenue Win Rate": [COL_DEAL_STAGE, COL_CREATION_DATE, COL_ARR],
+    "Pipeline Coverage": [COL_DEAL_STAGE, COL_ARR],
+    "Open Pipeline": [COL_DEAL_STAGE, COL_ARR],
+    "Sales Cycle": [COL_DEAL_STAGE, COL_CREATION_DATE, COL_CLOSE_DATE],
+    "Concentration": [COL_ARR],
+    "Expansion": [COL_ARR, COL_DEAL_TYPE],
+    "Pipeline Production": [COL_ARR, COL_CREATION_DATE],
+    "Reason Lost": [COL_REASON_LOST, COL_DEAL_STAGE],
+    "Funnel": [COL_DEAL_STAGE],
+}
 
 # ---------------------------------------------------------------------------
 # Alias mapping: canonical name → list of known alternate names
@@ -180,16 +196,9 @@ FILTER_CONFIG = [
 ]
 
 # ---------------------------------------------------------------------------
-# Metric ↔ required-column dependencies
-# Used to warn users which metrics are unavailable when columns are missing.
+# Legacy alias (kept for reference, superseded by METRIC_REQUIREMENTS above)
 # ---------------------------------------------------------------------------
-METRIC_DEPENDENCIES = {
-    "Count-based Win Rate": [COL_DEAL_STAGE, COL_CREATION_DATE],
-    "Revenue-based Win Rate": [COL_DEAL_STAGE, COL_CREATION_DATE, COL_ARR],
-    "Pipeline Coverage": [COL_DEAL_STAGE, COL_ARR],
-    "Sales Cycle": [COL_DEAL_STAGE, COL_CREATION_DATE, COL_CLOSE_DATE],
-    "Concentration": [COL_ARR],
-}
+# METRIC_DEPENDENCIES = { ... }
 
 # Concentration dimension columns – each shown if present
 CONCENTRATION_DIMENSIONS = [

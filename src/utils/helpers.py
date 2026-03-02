@@ -124,10 +124,45 @@ def parse_dates(series: pd.Series) -> pd.Series:
 
 
 # ---------------------------------------------------------------------------
-# 5. Derive helper columns
+# 5. Currency formatting (display only)
 # ---------------------------------------------------------------------------
-def add_derived_columns(df: pd.DataFrame) -> pd.DataFrame:
-    """Add boolean flags, time dimensions, and sales cycle days."""
+def format_currency(value: float, symbol: str = "€", short: bool = True) -> str:
+    """Format a numeric value for display with currency symbol.
+
+    Ported from JS ``fmtC()`` / ``fmtCS()``:
+      ≥ 1 M  → €1.23M
+      ≥ 1 K  → €1.2K
+      else   → €123
+    When *short* is False, always uses full format with commas: €1,234,567.
+    """
+    if value is None or pd.isna(value):
+        return f"{symbol}0"
+    v = float(value)
+    if not short:
+        return f"{symbol}{v:,.0f}"
+    abs_v = abs(v)
+    if abs_v >= 1_000_000:
+        return f"{symbol}{v / 1_000_000:,.2f}M"
+    if abs_v >= 1_000:
+        return f"{symbol}{v / 1_000:,.1f}K"
+    return f"{symbol}{v:,.0f}"
+
+
+# ---------------------------------------------------------------------------
+# 6. Derive helper columns
+# ---------------------------------------------------------------------------
+def add_derived_columns(
+    df: pd.DataFrame, fy_start_month: int = 1
+) -> pd.DataFrame:
+    """Add boolean flags, time dimensions, and sales cycle days.
+
+    Parameters
+    ----------
+    fy_start_month : int
+        First month of the fiscal year (1 = Jan, 4 = Apr, 7 = Jul, …).
+        Fiscal year is labelled by the *calendar year the FY ends in*
+        when fy_start_month > 1.
+    """
     # Normalise Deal Stage for comparison
     stage = df[COL_DEAL_STAGE].astype(str).str.strip()
 
@@ -138,8 +173,25 @@ def add_derived_columns(df: pd.DataFrame) -> pd.DataFrame:
     # Time dimensions from Deal Creation Date
     if COL_CREATION_DATE in df.columns:
         dt = df[COL_CREATION_DATE]
-        df[COL_FISCAL_YEAR] = dt.dt.year.astype("Int64").astype(str).replace("<NA>", None)
-        df[COL_FISCAL_QUARTER] = dt.dt.to_period("Q").astype(str)
+
+        if fy_start_month == 1:
+            # Standard calendar year — simple logic
+            df[COL_FISCAL_YEAR] = (
+                dt.dt.year.astype("Int64").astype(str).replace("<NA>", None)
+            )
+            df[COL_FISCAL_QUARTER] = dt.dt.to_period("Q").astype(str)
+        else:
+            # Offset fiscal year
+            offset = fy_start_month - 1  # months to shift back
+            shifted = dt - pd.DateOffset(months=offset)
+            df[COL_FISCAL_YEAR] = (
+                "FY"
+                + shifted.dt.year.astype("Int64").astype(str).replace("<NA>", None)
+            )
+            fiscal_month_num = ((dt.dt.month - fy_start_month) % 12) + 1
+            fiscal_qtr = ((fiscal_month_num - 1) // 3) + 1
+            df[COL_FISCAL_QUARTER] = df[COL_FISCAL_YEAR] + "-Q" + fiscal_qtr.astype(str)
+
         df[COL_FISCAL_MONTH] = dt.dt.to_period("M").astype(str)
         df[COL_FISCAL_WEEK] = (
             dt.dt.isocalendar().year.astype(str)
@@ -155,7 +207,7 @@ def add_derived_columns(df: pd.DataFrame) -> pd.DataFrame:
 
 
 # ---------------------------------------------------------------------------
-# 6. Main loader entry point
+# 7. Main loader entry point
 # ---------------------------------------------------------------------------
 def load_and_parse(uploaded_file) -> pd.DataFrame:
     """

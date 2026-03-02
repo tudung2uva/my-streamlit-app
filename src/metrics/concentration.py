@@ -90,6 +90,40 @@ def get_available_dimensions(df: pd.DataFrame) -> list[dict]:
     return available
 
 
+def concentration_stats(df: pd.DataFrame, group_col: str) -> dict | None:
+    """
+    Compute top-N concentration statistics.
+    Returns dict with keys: top_1_pct, top_3_pct, top_10_pct, label.
+    Label: 'Diversified' / 'Moderate' / 'Concentrated'.
+    Ported from render.js renderConcentrationPane().
+    """
+    tbl = concentration_table(df, group_col)
+    if tbl is None or tbl.empty:
+        return None
+
+    pcts = tbl["% of Total"].values  # already sorted descending
+    n = len(pcts)
+
+    top_1_pct = float(pcts[0]) if n >= 1 else 0.0
+    top_3_pct = float(pcts[:3].sum()) if n >= 3 else float(pcts.sum())
+    top_10_pct = float(pcts[:10].sum()) if n >= 10 else float(pcts.sum())
+
+    # Classify
+    if top_1_pct >= 30 or top_3_pct >= 60:
+        label = "Concentrated"
+    elif top_1_pct >= 15 or top_3_pct >= 40:
+        label = "Moderate"
+    else:
+        label = "Diversified"
+
+    return {
+        "top_1_pct": round(top_1_pct, 1),
+        "top_3_pct": round(top_3_pct, 1),
+        "top_10_pct": round(top_10_pct, 1),
+        "label": label,
+    }
+
+
 def _empty_figure(msg: str) -> go.Figure:
     fig = go.Figure()
     fig.add_annotation(text=msg, xref="paper", yref="paper", x=0.5, y=0.5, showarrow=False)

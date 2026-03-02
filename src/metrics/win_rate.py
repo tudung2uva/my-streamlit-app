@@ -59,7 +59,9 @@ def _compute_rates(df: pd.DataFrame, time_col: str) -> pd.DataFrame:
 def count_win_rate_kpi(df: pd.DataFrame) -> float:
     """Overall count-based win rate as a decimal (0-1)."""
     won = df[COL_IS_CLOSED_WON].sum()
-    total = len(df)
+    lost = df[COL_IS_CLOSED_LOST].sum()
+    opn = df[COL_IS_OPEN].sum()
+    total = won + lost + opn
     return won / total if total > 0 else 0
 
 
@@ -68,7 +70,9 @@ def revenue_win_rate_kpi(df: pd.DataFrame) -> float:
     if COL_ARR not in df.columns:
         return 0
     arr_won = df.loc[df[COL_IS_CLOSED_WON], COL_ARR].sum()
-    arr_total = df[COL_ARR].sum()
+    arr_lost = df.loc[df[COL_IS_CLOSED_LOST], COL_ARR].sum()
+    arr_open = df.loc[df[COL_IS_OPEN], COL_ARR].sum()
+    arr_total = arr_won + arr_lost + arr_open
     return arr_won / arr_total if arr_total > 0 else 0
 
 
