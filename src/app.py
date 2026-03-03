@@ -68,6 +68,7 @@ from metrics.churn import (
 
 from utils.constants import COL_DEAL_TYPE, COL_DEAL_OWNER, COL_ARR
 from utils.helpers import format_currency
+from utils.benchmarks import evaluate_benchmark, render_benchmark_editor
 
 
 # ---------------------------------------------------------------------------
@@ -80,33 +81,10 @@ def _color_tag(value_str: str, color: str) -> str:
     )
 
 
-def _benchmark_color(metric: str, value: float) -> str:
-    """Return hex color based on benchmark thresholds."""
-    if metric == "pipeline_coverage":
-        if value >= 4.0:
-            return "#43A047"
-        if value >= 3.0:
-            return "#FFA726"
-        return "#E53935"
-    if metric in ("count_wr", "rev_wr"):
-        if value >= 0.30:
-            return "#43A047"
-        if value >= 0.15:
-            return "#FFA726"
-        return "#E53935"
-    if metric == "nrr":
-        if value >= 1.0:
-            return "#43A047"
-        if value >= 0.90:
-            return "#FFA726"
-        return "#E53935"
-    if metric in ("logo_churn", "arr_churn"):
-        if value <= 0.05:
-            return "#43A047"
-        if value <= 0.15:
-            return "#FFA726"
-        return "#E53935"
-    return "#1E88E5"
+def _benchmark_color(metric: str, value: float | None, context: dict | None = None) -> str:
+    """Return hex color based on configurable benchmark thresholds."""
+    color, _ = evaluate_benchmark(metric, value, context=context)
+    return color
 
 
 # ---------------------------------------------------------------------------
@@ -215,6 +193,11 @@ def main():
     fy_start = st.session_state.get("_fy_start_month", 1)
 
     # ------------------------------------------------------------------ #
+    # 3b. Configurable benchmark table (session-scoped)
+    # ------------------------------------------------------------------ #
+    render_benchmark_editor()
+
+    # ------------------------------------------------------------------ #
     # 4. Target ARR input (for Pipeline Coverage)
     # ------------------------------------------------------------------ #
     if flags.get("Pipeline Coverage", False):
@@ -242,18 +225,24 @@ def main():
     #  KPI SUMMARY ROW
     # ================================================================== #
     kpi_items = []
+    avg_deal_size = acv_kpi(filtered_df)
+    _, current_arr_level, _ = arr_churn_kpi(filtered_df)
+    benchmark_context = {
+        "avg_deal_size": avg_deal_size,
+        "current_arr": current_arr_level,
+    }
 
     if flags.get("Win Rate", False):
         cwr = count_win_rate_kpi(filtered_df)
-        kpi_items.append(("Count Win Rate", f"{cwr:.1%}", _benchmark_color("count_wr", cwr)))
+        kpi_items.append(("Count Win Rate", f"{cwr:.1%}", _benchmark_color("count_wr", cwr, benchmark_context)))
 
     if flags.get("Revenue Win Rate", False):
         rwr = revenue_win_rate_kpi(filtered_df)
-        kpi_items.append(("Revenue Win Rate", f"{rwr:.1%}", _benchmark_color("rev_wr", rwr)))
+        kpi_items.append(("Revenue Win Rate", f"{rwr:.1%}", _benchmark_color("rev_wr", rwr, benchmark_context)))
 
     if flags.get("Pipeline Coverage", False):
         pc = pipeline_coverage_kpi(filtered_df, target_arr)
-        kpi_items.append(("Pipeline Coverage", f"{pc:.1f}×", _benchmark_color("pipeline_coverage", pc)))
+        kpi_items.append(("Pipeline Coverage", f"{pc:.1f}×", _benchmark_color("pipeline_coverage", pc, benchmark_context)))
 
     if flags.get("Open Pipeline", False):
         oparr = open_pipeline_arr(filtered_df)
@@ -262,7 +251,13 @@ def main():
     if flags.get("Sales Cycle", False):
         asc = avg_sales_cycle_kpi(filtered_df)
         msc = median_sales_cycle_kpi(filtered_df)
-        kpi_items.append(("Avg Sales Cycle", f"{asc:.0f} d" if asc is not None else "N/A", "#1E88E5"))
+        kpi_items.append(
+            (
+                "Avg Sales Cycle",
+                f"{asc:.0f} d" if asc is not None else "N/A",
+                _benchmark_color("avg_sales_cycle", asc, benchmark_context),
+            )
+        )
         kpi_items.append(("Median Sales Cycle", f"{msc:.0f} d" if msc is not None else "N/A", "#1E88E5"))
 
     if flags.get("ACV", False):
@@ -275,15 +270,15 @@ def main():
 
     if flags.get("Net Revenue Retention", False):
         nrr_val = nrr_kpi(filtered_df)
-        kpi_items.append(("NRR", f"{nrr_val:.1%}", _benchmark_color("nrr", nrr_val)))
+        kpi_items.append(("NRR", f"{nrr_val:.1%}", _benchmark_color("nrr", nrr_val, benchmark_context)))
 
     if flags.get("Logo Churn", False):
         _, _, lc_pct = logo_churn_kpi(filtered_df)
-        kpi_items.append(("Logo Churn", f"{lc_pct:.1%}", _benchmark_color("logo_churn", lc_pct)))
+        kpi_items.append(("Logo Churn", f"{lc_pct:.1%}", _benchmark_color("logo_churn", lc_pct, benchmark_context)))
 
     if flags.get("ARR Churn", False):
         _, _, ac_pct = arr_churn_kpi(filtered_df)
-        kpi_items.append(("ARR Churn", f"{ac_pct:.1%}", _benchmark_color("arr_churn", ac_pct)))
+        kpi_items.append(("ARR Churn", f"{ac_pct:.1%}", _benchmark_color("arr_churn", ac_pct, benchmark_context)))
 
     if kpi_items:
         st.markdown("---")
@@ -437,7 +432,7 @@ def main():
             if has_nrr:
                 nrr_val = nrr_kpi(filtered_df)
                 st.markdown(
-                    f"**Net Revenue Retention:** {_color_tag(f'{nrr_val:.1%}', _benchmark_color('nrr', nrr_val))}",
+                    f"**Net Revenue Retention:** {_color_tag(f'{nrr_val:.1%}', _benchmark_color('nrr', nrr_val, benchmark_context))}",
                     unsafe_allow_html=True,
                 )
                 st.plotly_chart(

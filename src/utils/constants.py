@@ -113,7 +113,7 @@ COLUMN_ALIASES: dict[str, list[str]] = {
     COL_REGION: ["Region", "Country", "Geography", "Territory"],
     COL_CUSTOMER_NAME: ["Company name", "Company Name", "Account Name", "Customer", "Account"],
     COL_PIPELINE: ["Sales Pipeline"],
-    COL_DEAL_ID: ["Opportunity ID", "Opp ID", "ID"],
+    COL_DEAL_ID: ["Opportunity ID", "Opp ID", "ID", "Record ID", "DealID"],
     COL_ARR_START: ["Starting ARR", "Beginning ARR", "ARR Start"],
     COL_CHURN_ARR: ["Churned ARR", "Lost ARR"],
     COL_CHURN_DATE: ["Churned Date", "Cancel Date"],
