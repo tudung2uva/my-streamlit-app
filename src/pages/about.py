@@ -1,19 +1,25 @@
 import streamlit as st
 
 def about():
-    st.title("About This Application")
+    st.title("About Sales Pipeline Analyzer")
     st.write("""
-        This application is designed to provide users with insights and visualizations based on the data provided.
-        
-        ## Purpose
-        The main goal of this app is to demonstrate the capabilities of Streamlit for building interactive web applications for data science and machine learning projects.
-        
-        ## How to Use
-        - Navigate to the **Home** page to view the main features of the application.
-        - Use the sidebar to access different sections of the app.
-        
-        ## Contact
-        For any inquiries or feedback, please reach out to the development team.
+        This application provides a practical operating view of sales-pipeline performance,
+        conversion, and ARR composition.
+
+        ## Scope
+        - Deal-level KPI monitoring
+        - Time-based trend analysis (Year / Quarter / Month / Week)
+        - Pipeline quality and concentration diagnostics
+        - Expansion and reason-lost analysis
+
+        ## Metric Governance
+        - Formulas are exposed in **Formula Definitions & Computation Detail**
+        - A dedicated **Metric Dictionary** section provides metric logic and required columns
+        - Missing columns gracefully disable dependent metrics instead of failing the dashboard
+
+        ## Intended Audience
+        Revenue Operations, Sales Leadership, and Finance stakeholders who need a
+        concise but auditable picture of pipeline health.
     """)
 
 if __name__ == "__main__":

@@ -25,7 +25,27 @@ def stage_conversion_funnel(df: pd.DataFrame) -> go.Figure:
         .reset_index()
     )
     stage_counts.columns = ["Stage", "Count"]
-    stage_counts = stage_counts.sort_values("Count", ascending=False)
+
+    stage_order = [
+        "prospecting",
+        "qualification",
+        "discovery",
+        "proposal",
+        "negotiation",
+        "contract",
+        "closed won",
+        "closed lost",
+    ]
+
+    def _rank(stage: str) -> int:
+        s = str(stage).strip().lower()
+        for i, token in enumerate(stage_order):
+            if token in s:
+                return i
+        return len(stage_order) + 1
+
+    stage_counts["_rank"] = stage_counts["Stage"].map(_rank)
+    stage_counts = stage_counts.sort_values(["_rank", "Count"], ascending=[True, False]).drop(columns=["_rank"])
 
     if stage_counts.empty:
         return _empty_figure("No deals in filtered data")
@@ -37,10 +57,8 @@ def stage_conversion_funnel(df: pd.DataFrame) -> go.Figure:
             textinfo="value+percent initial",
             marker=dict(
                 color=[
-                    "#1E88E5", "#42A5F5", "#64B5F6", "#90CAF9",
-                    "#43A047", "#66BB6A", "#81C784", "#A5D6A7",
-                    "#FFA726", "#FFB74D", "#FFCC80", "#FFE0B2",
-                    "#E53935", "#EF5350", "#E57373", "#EF9A9A",
+                    "#1E3A5F", "#2F5D8A", "#3F7AAE", "#5B95C7",
+                    "#5E6B73", "#7A868D", "#2E7D32", "#C62828",
                 ][: len(stage_counts)],
             ),
         )

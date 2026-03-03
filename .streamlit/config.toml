@@ -7,7 +7,7 @@ primaryColor = "#1E88E5"
 backgroundColor = "#FFFFFF"
 secondaryBackgroundColor = "#F5F7FA"
 textColor = "#1A1A2E"
-font = "Arial"
+font = "sans serif"
 base="light"
 
 [browser]

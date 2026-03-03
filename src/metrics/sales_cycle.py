@@ -76,6 +76,33 @@ def sales_cycle_by_dimension(df: pd.DataFrame, group_col: str, label: str) -> go
     return fig
 
 
+# ---------------------------------------------------------------------------
+# Detail table
+# ---------------------------------------------------------------------------
+def sales_cycle_detail_table(df: pd.DataFrame, time_col: str) -> pd.DataFrame | None:
+    """Per-period sales cycle breakdown (won deals only)."""
+    if COL_DAYS_TO_CLOSE not in df.columns or time_col not in df.columns:
+        return None
+
+    won = df.loc[df[COL_IS_CLOSED_WON]].dropna(subset=[COL_DAYS_TO_CLOSE])
+    if won.empty:
+        return None
+
+    records = []
+    for period, grp in won.groupby(time_col, dropna=False):
+        days = grp[COL_DAYS_TO_CLOSE]
+        records.append({
+            "Period": str(period),
+            "Won Deals": len(grp),
+            "Avg Days": round(float(days.mean()), 1),
+            "Median Days": round(float(days.median()), 1),
+            "Min Days": int(days.min()),
+            "Max Days": int(days.max()),
+        })
+
+    return pd.DataFrame(records) if records else None
+
+
 def _empty_figure(msg: str) -> go.Figure:
     fig = go.Figure()
     fig.add_annotation(text=msg, xref="paper", yref="paper", x=0.5, y=0.5, showarrow=False)

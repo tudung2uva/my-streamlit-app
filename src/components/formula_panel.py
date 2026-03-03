@@ -58,6 +58,26 @@ FORMULA_DEFINITIONS = [
         "formula": "ARR share (%) per dimension group",
         "notes": "#1%, Top 3%, Top 10% thresholds. ≥30% #1 or ≥60% Top 3 = Concentrated.",
     },
+    {
+        "metric": "ACV (Avg Contract Value)",
+        "formula": "SUM(ARR Won) / COUNT(Won Deals)",
+        "notes": "Closed Won deals only. Per-period avg and median reported.",
+    },
+    {
+        "metric": "Net Revenue Retention",
+        "formula": "(Starting ARR + Expansion − Churn) / Starting ARR",
+        "notes": "Expansion = won Upsell/Cross-sell ARR. Churn = Churn ARR column. De-duped by customer.",
+    },
+    {
+        "metric": "Logo Churn",
+        "formula": "Churned Customers / Starting Customers",
+        "notes": "Churned = non-null Churn Date. Starting = ARR per 1/1 > 0. De-duped by customer.",
+    },
+    {
+        "metric": "ARR Churn",
+        "formula": "SUM(Churn ARR) / SUM(Starting ARR)",
+        "notes": "Both numerator and denominator de-duplicated by Customer Name.",
+    },
 ]
 
 
@@ -90,6 +110,9 @@ def render_formula_panel(df: pd.DataFrame, time_col: str) -> None:
                 cycle_days = grp.loc[grp[COL_IS_CLOSED_WON], COL_DAYS_TO_CLOSE].dropna() if COL_DAYS_TO_CLOSE in grp.columns else pd.Series(dtype=float)
                 avg_cycle = float(cycle_days.mean()) if not cycle_days.empty else None
 
+                median_cycle = float(cycle_days.median()) if not cycle_days.empty else None
+                acv = arr_won / won if won > 0 else 0
+
                 records.append({
                     "Period": str(period),
                     "Won": won,
@@ -99,7 +122,9 @@ def render_formula_panel(df: pd.DataFrame, time_col: str) -> None:
                     "ARR Won": f"${arr_won:,.0f}",
                     "ARR Total": f"${arr_total:,.0f}",
                     "Rev WR": f"{rev_wr:.1%}",
+                    "ACV": f"${acv:,.0f}",
                     "Avg Cycle (d)": f"{avg_cycle:.0f}" if avg_cycle is not None else "—",
+                    "Med Cycle (d)": f"{median_cycle:.0f}" if median_cycle is not None else "—",
                 })
 
             if records:

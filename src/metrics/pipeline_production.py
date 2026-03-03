@@ -59,6 +59,38 @@ def pipeline_production_chart(df: pd.DataFrame, time_col: str) -> go.Figure:
 
 
 # ---------------------------------------------------------------------------
+# Stats & detail table
+# ---------------------------------------------------------------------------
+def pipeline_production_stats(df: pd.DataFrame) -> tuple[float, float]:
+    """Return (median_deal_arr, avg_deal_arr) for all deals."""
+    if COL_ARR not in df.columns:
+        return 0.0, 0.0
+    arr = df[COL_ARR].dropna()
+    if arr.empty:
+        return 0.0, 0.0
+    return float(arr.median()), float(arr.mean())
+
+
+def pipeline_production_detail_table(df: pd.DataFrame, time_col: str) -> pd.DataFrame | None:
+    """Per-period pipeline production breakdown."""
+    if COL_ARR not in df.columns or time_col not in df.columns:
+        return None
+
+    records = []
+    for period, grp in df.groupby(time_col, dropna=False):
+        arr = grp[COL_ARR].dropna()
+        records.append({
+            "Period": str(period),
+            "Deals Created": len(grp),
+            "Total Pipeline ARR": float(arr.sum()),
+            "Median Deal ARR": float(arr.median()) if not arr.empty else 0,
+            "Avg Deal ARR": float(arr.mean()) if not arr.empty else 0,
+        })
+
+    return pd.DataFrame(records) if records else None
+
+
+# ---------------------------------------------------------------------------
 # Helper
 # ---------------------------------------------------------------------------
 def _empty_figure(msg: str) -> go.Figure:

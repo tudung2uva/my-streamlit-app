@@ -74,7 +74,7 @@ def pipeline_by_stage_chart(df: pd.DataFrame) -> go.Figure:
 
 
 def pipeline_waterfall_chart(df: pd.DataFrame) -> go.Figure:
-    """Waterfall showing Won / Lost / Open ARR splits."""
+    """ARR breakdown by status (Won / Lost / Open) with clearer visuals."""
     if COL_ARR not in df.columns:
         return _empty_figure("No ARR data for waterfall")
 
@@ -83,27 +83,71 @@ def pipeline_waterfall_chart(df: pd.DataFrame) -> go.Figure:
     opn_arr = df.loc[df[COL_IS_OPEN], COL_ARR].sum()
     total = won_arr + lost_arr + opn_arr
 
+    categories = ["Total Pipeline", "Open", "Closed Won", "Closed Lost"]
+    values = [total, opn_arr, won_arr, lost_arr]
+    colors = ["#455A64", "#1565C0", "#2E7D32", "#C62828"]
+
     fig = go.Figure(
-        go.Waterfall(
-            x=["Total Pipeline", "Closed Won", "Closed Lost", "Open"],
-            y=[total, -won_arr, -lost_arr, -opn_arr],
-            measure=["absolute", "relative", "relative", "relative"],
-            connector=dict(line=dict(color="rgba(0,0,0,0)")),
-            decreasing=dict(marker_color="#43A047"),
-            increasing=dict(marker_color="#E53935"),
-            totals=dict(marker_color="#1E88E5"),
-            text=[f"${v:,.0f}" for v in [total, won_arr, lost_arr, opn_arr]],
+        go.Bar(
+            x=categories,
+            y=values,
+            marker_color=colors,
+            text=[f"${v:,.0f}" for v in values],
             textposition="outside",
+            hovertemplate="%{x}: $%{y:,.0f}<extra></extra>",
         )
     )
     fig.update_layout(
-        title="Pipeline ARR Breakdown",
+        title="Pipeline ARR Breakdown by Status",
         yaxis_title="ARR ($)",
         template="plotly_white",
         yaxis_tickprefix="$",
         yaxis_tickformat=",",
+        showlegend=False,
     )
     return fig
+
+
+# ---------------------------------------------------------------------------
+# Detail table & stats for Pipeline Coverage
+# ---------------------------------------------------------------------------
+def pipeline_coverage_stats(df: pd.DataFrame) -> tuple[float, float]:
+    """Return (median_open_deal_size, avg_open_deal_size) for open deals."""
+    if COL_ARR not in df.columns:
+        return 0.0, 0.0
+    open_arr = df.loc[df[COL_IS_OPEN], COL_ARR].dropna()
+    if open_arr.empty:
+        return 0.0, 0.0
+    return float(open_arr.median()), float(open_arr.mean())
+
+
+def pipeline_coverage_detail_table(
+    df: pd.DataFrame, target_arr: float, time_col: str
+) -> pd.DataFrame | None:
+    """Per-period pipeline coverage breakdown."""
+    if COL_ARR not in df.columns or time_col not in df.columns:
+        return None
+
+    records = []
+    for period, grp in df.groupby(time_col, dropna=False):
+        open_deals = grp[grp[COL_IS_OPEN]]
+        open_arr = open_deals[COL_ARR].sum()
+        n_open = len(open_deals)
+        median_deal = float(open_deals[COL_ARR].median()) if n_open > 0 else 0
+        avg_deal = float(open_deals[COL_ARR].mean()) if n_open > 0 else 0
+        coverage = open_arr / target_arr if target_arr > 0 else 0
+
+        records.append({
+            "Period": str(period),
+            "Open Deals": n_open,
+            "Open Pipeline ARR": open_arr,
+            "Target ARR": target_arr,
+            "Coverage": f"{coverage:.1f}\u00d7",
+            "Median Deal": median_deal,
+            "Avg Deal": avg_deal,
+        })
+
+    return pd.DataFrame(records) if records else None
 
 
 def _empty_figure(msg: str) -> go.Figure:

@@ -77,6 +77,10 @@ METRIC_REQUIREMENTS: dict[str, list[str]] = {
     "Pipeline Production": [COL_ARR, COL_CREATION_DATE],
     "Reason Lost": [COL_REASON_LOST, COL_DEAL_STAGE],
     "Funnel": [COL_DEAL_STAGE],
+    "ACV": [COL_ARR, COL_DEAL_STAGE],
+    "Net Revenue Retention": [COL_ARR_START, COL_CHURN_ARR, COL_DEAL_TYPE, COL_ARR],
+    "Logo Churn": [COL_CUSTOMER_NAME, COL_CHURN_DATE],
+    "ARR Churn": [COL_CHURN_ARR, COL_ARR_START],
 }
 
 # ---------------------------------------------------------------------------

@@ -53,6 +53,7 @@ def expansion_over_time_chart(df: pd.DataFrame, time_col: str) -> go.Figure:
         exp.groupby([time_col, "_type"], dropna=False)[COL_ARR]
         .sum()
         .reset_index()
+        .sort_values(time_col)
     )
 
     fig = px.bar(
@@ -60,16 +61,28 @@ def expansion_over_time_chart(df: pd.DataFrame, time_col: str) -> go.Figure:
         x=time_col,
         y=COL_ARR,
         color="_type",
-        title="Expansion ARR Over Time (Won Deals)",
+        title="Expansion ARR Over Time",
         labels={COL_ARR: "ARR", time_col: "Period", "_type": "Deal Type"},
-        color_discrete_sequence=["#43A047", "#1E88E5"],
+        color_discrete_sequence=["#2E7D32", "#1565C0"],
         barmode="stack",
     )
+    fig.update_traces(hovertemplate="%{x}<br>%{legendgroup}: $%{y:,.0f}<extra></extra>")
     fig.update_layout(
         template="plotly_white",
         yaxis_tickprefix="$",
         yaxis_tickformat=",",
         legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
+        annotations=[
+            dict(
+                text="Won Upsell + Cross-sell deals",
+                x=0,
+                y=1.12,
+                xref="paper",
+                yref="paper",
+                showarrow=False,
+                font=dict(size=11, color="#5f6368"),
+            )
+        ],
     )
     return fig
 
